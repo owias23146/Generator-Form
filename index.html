@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generator Survey Form</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4f81bd, #365f91);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .instructions {
+            background: #f8f9fa;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+            margin: 20px;
+            border-radius: 10px;
+            border-left: 5px solid #4f81bd;
+        }
+
+        .instructions h3 {
+            color: #4f81bd;
+            margin-bottom: 10px;
+        }
+
+        .instructions ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .instructions li {
+            padding: 5px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .instructions li:before {
+            content: "•";
+            color: #4f81bd;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+
+        .survey-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+
+        .survey-table th {
+            background: linear-gradient(135deg, #4f81bd, #365f91);
+            color: white;
+            padding: 15px 10px;
+            text-align: center;
+            font-weight: 600;
+            border: 1px solid #365f91;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .survey-table td {
+            padding: 12px 10px;
+            border: 1px solid #ddd;
+            vertical-align: middle;
+        }
+
+        .category-row {
+            background: linear-gradient(135deg, #dce6f1, #b8cde6);
+            font-weight: bold;
+            color: #2d5597;
+        }
+
+        .category-row td {
+            border-color: #a5b8d1;
+        }
+
+        .parameter-row:hover {
+            background-color: #f8f9ff;
+            transform: translateY(-1px);
+            transition: all 0.2s ease;
+        }
+
+        .category-column {
+            width: 20%;
+            font-weight: 600;
+        }
+
+        .parameter-column {
+            width: 25%;
+            padding-left: 20px;
+        }
+
+        .value-column {
+            width: 20%;
+        }
+
+        .verified-column {
+            width: 12%;
+            text-align: center;
+        }
+
+        .remarks-column {
+            width: 23%;
+        }
+
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 6px;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        input[type="text"]:focus, input[type="number"]:focus, select:focus {
+            outline: none;
+            border-color: #4f81bd;
+            box-shadow: 0 0 0 3px rgba(79, 129, 189, 0.1);
+            transform: translateY(-1px);
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #4f81bd;
+            cursor: pointer;
+            transform: scale(1.2);
+        }
+
+        select {
+            cursor: pointer;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 8px center;
+            background-repeat: no-repeat;
+            background-size: 16px;
+            padding-right: 35px;
+        }
+
+        .progress-bar {
+            margin: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            height: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4f81bd, #67a3c6);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            padding: 20px;
+            background: #f8f9fa;
+            margin: 20px;
+            border-radius: 10px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #4f81bd;
+            display: block;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .action-buttons {
+            padding: 20px;
+            text-align: center;
+            border-top: 1px solid #eee;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4f81bd, #365f91);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(79, 129, 189, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(79, 129, 189, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d, #495057);
+            box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+        }
+
+        .btn-camera {
+            background: linear-gradient(135deg, #28a745, #218838);
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .table-container {
+            max-height: 70vh;
+            overflow-y: auto;
+            margin: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+
+        .table-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .table-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .table-container::-webkit-scrollbar-thumb {
+            background: #4f81bd;
+            border-radius: 4px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            background: rgba(79, 129, 189, 0.1);
+            border-radius: 10px;
+            margin: 20px;
+            color: #4f81bd;
+            font-weight: bold;
+            font-size: 1.2em;
+            border: 2px dashed #4f81bd;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 10px;
+            font-size: 0.8em;
+            color: #666;
+        }
+
+        #cameraModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        #cameraModal video {
+            max-width: 90%;
+            max-height: 60%;
+            border-radius: 10px;
+        }
+
+        #cameraModal button {
+            margin: 10px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #captureButton {
+            background: #28a745;
+            color: white;
+        }
+
+        #closeCamera {
+            background: #dc3545;
+            color: white;
+        }
+
+        #photoCanvas {
+            display: none;
+        }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                max-width: 100%;
+                border-radius: 10px;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .header p {
+                font-size: 0.9em;
+            }
+
+            .instructions {
+                margin: 10px;
+                padding: 15px;
+                font-size: 0.9em;
+            }
+
+            .stats {
+                flex-direction: column;
+                padding: 10px;
+                margin: 10px;
+            }
+
+            .stat-item {
+                padding: 10px;
+            }
+
+            .stat-number {
+                font-size: 1.5em;
+            }
+
+            .stat-label {
+                font-size: 0.8em;
+            }
+
+            .table-container {
+                overflow-x: auto;
+                margin: 10px;
+            }
+
+            .survey-table {
+                font-size: 12px;
+                min-width: 600px; /* Ensures table is scrollable */
+            }
+
+            .survey-table th, .survey-table td {
+                padding: 8px 5px;
+            }
+
+            input[type="text"], input[type="number"], select {
+                font-size: 12px;
+                padding: 6px 8px;
+            }
+
+            input[type="checkbox"] {
+                transform: scale(1);
+                width: 16px;
+                height: 16px;
+            }
+
+            .action-buttons {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                padding: 15px;
+            }
+
+            .btn, .btn-secondary, .btn-camera {
+                width: 100%;
+                max-width: 300px;
+                margin: 5px 0;
+                padding: 10px;
+                font-size: 14px;
+            }
+
+            .loading {
+                margin: 10px;
+                font-size: 1em;
+                padding: 15px;
+            }
+
+            .footer {
+                font-size: 0.7em;
+                padding: 8px;
+            }
+
+            #cameraModal video {
+                max-width: 95%;
+                max-height: 50%;
+            }
+
+            #cameraModal button {
+                font-size: 14px;
+                padding: 8px 16px;
+                margin: 5px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.5em;
+            }
+
+            .header p {
+                font-size: 0.8em;
+            }
+
+            .instructions {
+                font-size: 0.8em;
+                padding: 10px;
+            }
+
+            .survey-table {
+                font-size: 10px;
+            }
+
+            input[type="text"], input[type="number"], select {
+                font-size: 10px;
+                padding: 5px 6px;
+            }
+
+            .btn, .btn-secondary, .btn-camera {
+                font-size: 12px;
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div style="text-align:center; margin-bottom:10px;">
+                <span style="font-family:'Impact','Arial Black',Arial,sans-serif; font-size:48px; color:#e30613; letter-spacing:2px; font-weight:bold; line-height:1;">
+                    EXIDE
+                </span>
+                <br>
+                <span style="font-family:Arial, Helvetica, sans-serif; font-size:20px; color:#222; letter-spacing:6px; font-weight:normal;">
+                    PAKISTAN LTD
+                </span>
+            </div>
+            <h1>⚡ Generator Survey Form</h1>
+            <p>Comprehensive Technical Data Collection</p>
+        </div>
+
+        <div class="instructions">
+            <h3>📋 Instructions:</h3>
+            <ul>
+                <li>Fill in the 'Value' column with actual generator data</li>
+                <li>Check the verification box when data is confirmed</li>
+                <li>Use 'Remarks' dropdown to indicate parameter status</li>
+                <li>Gray rows indicate category headers</li>
+                <li>Progress is automatically tracked below</li>
+            </ul>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <span class="stat-number" id="totalParams">44</span>
+                <div class="stat-label">Total Parameters</div>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number" id="completedParams">0</span>
+                <div class="stat-label">Completed</div>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number" id="verifiedParams">0</span>
+                <div class="stat-label">Verified</div>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number" id="completionPercent">0%</span>
+                <div class="stat-label">Completion</div>
+            </div>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div class="table-container">
+            <table class="survey-table" id="surveyTable">
+                <thead>
+                    <tr>
+                        <th class="category-column">Category</th>
+                        <th class="parameter-column">Parameter</th>
+                        <th class="value-column">Value</th>
+                        <th class="verified-column">Verified (✔)</th>
+                        <th class="remarks-column">Remarks</th>
+                    </tr>
+                </thead>
+                <tbody id="surveyBody">
+                    <!-- Table rows will be generated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="loading" id="loadingIndicator">
+            🔄 Generating Report...
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn" onclick="generateReport()">📊 Generate Report</button>
+            <button class="btn btn-secondary" onclick="clearForm()">🗑️ Clear Form</button>
+            <button class="btn btn-camera" onclick="openCamera()">📷 Capture Photo</button>
+        </div>
+
+        <div class="footer">
+            Generated by Owais Khan
+        </div>
+    </div>
+
+    <div id="cameraModal">
+        <video id="video" autoplay></video>
+        <button id="captureButton" onclick="capturePhoto()">Capture Photo</button>
+        <button id="closeCamera" onclick="closeCamera()">Close</button>
+    </div>
+    <canvas id="photoCanvas"></canvas>
+
+    <script>
+        const { jsPDF } = window.jspdf;
+        const surveyData = [
+            ["Generator Specifications", "Make & Model"],
+            ["", "Serial Number"],
+            ["", "Manufacturing Year"],
+            ["", "Rated Capacity (kW/kVA)"],
+            ["", "Fuel Type"],
+            ["", "Voltage & Phase"],
+            ["", "Frequency (Hz)"],
+            ["", "Minimum Load (%)"],
+            ["", "Power Factor"],
+            ["Fuel Consumption", "25-30% Load (L/hr)"],
+            ["", "50% Load (L/hr)"],
+            ["", "75-80% Load (L/hr)"],
+            ["", "100% Load (L/hr)"],
+            ["", "Fuel Tank Capacity (L)"],
+            ["Operational Constraints", "Minimum Runtime (hrs)"],
+            ["", "Maximum Runtime (hrs)"],
+            ["", "Startup Time (sec)"],
+            ["", "Cooldown Time (min)"],
+            ["", "Maintenance Interval (hrs)"],
+            ["", "Ambient Temp. Min (°C)"],
+            ["", "Ambient Temp. Max (°C)"],
+            ["", "Altitude Limit (m)"],
+            ["Cost Data", "Capital Cost (Rs)"],
+            ["", "Installation Cost (Rs)"],
+            ["", "Replacement Cost (Rs)"],
+            ["", "O&M Cost (Rs/year)"],
+            ["", "Current Fuel Price (Rs/L)"],
+            ["", "Insurance Cost (Rs/year)"],
+            ["Performance Data", "Efficiency at 25% Load (%)"],
+            ["", "Efficiency at 50% Load (%)"],
+            ["", "Efficiency at 75% Load (%)"],
+            ["", "Efficiency at 100% Load (%)"],
+            ["", "Load Response Time (sec)"],
+            ["Emissions (Optional)", "CO (g/L)"],
+            ["", "NOx (g/L)"],
+            ["", "PM (g/L)"],
+            ["", "HC (g/L)"],
+            ["", "CO2 (g/L)"],
+            ["Compliance & Safety", "Emission Standards Met"],
+            ["", "Safety Certifications"],
+            ["", "Noise Level (dB)"],
+            ["", "Vibration Level"]
+        ];
+
+        const fuelTypes = ["Diesel", "Natural Gas", "Gasoline", "Dual Fuel", "Biogas", "LPG"];
+        const remarkOptions = ["OK", "Needs Review", "Not Applicable", "Missing Data", "Requires Verification", "N/A"];
+        let stream = null;
+        let capturedImage = null;
+
+        function generateTable() {
+            const tbody = document.getElementById('surveyBody');
+            tbody.innerHTML = '';
+
+            surveyData.forEach((row523, index) => {
+                const tr = document.createElement('tr');
+                const isCategory = row523[0] !== "";
+                
+                if (isCategory) {
+                    tr.className = 'category-row';
+                } else {
+                    tr.className = 'parameter-row';
+                }
+
+                const categoryTd = document.createElement('td');
+                categoryTd.textContent = row523[0];
+                categoryTd.className = 'category-column';
+                tr.appendChild(categoryTd);
+
+                const parameterTd = document.createElement('td');
+                parameterTd.textContent = row523[1];
+                parameterTd.className = 'parameter-column';
+                tr.appendChild(parameterTd);
+
+                const valueTd = document.createElement('td');
+                valueTd.className = 'value-column';
+                if (!isCategory) {
+                    const input = document.createElement('input');
+                    if (row523[1].includes('Fuel Type')) {
+                        const select = document.createElement('select');
+                        select.innerHTML = '<option value="">Select...</option>';
+                        fuelTypes.forEach(fuel => {
+                            const option = document.createElement('option');
+                            option.value = fuel;
+                            option.textContent = fuel;
+                            select.appendChild(option);
+                        });
+                        select.addEventListener('change', updateStats);
+                        valueTd.appendChild(select);
+                    } else {
+                        input.type = row523[1].includes('Year') || row523[1].includes('(%)') || 
+                                    row523[1].includes('(L') || row523[1].includes('(hrs)') || 
+                                    row523[1].includes('(sec)') || row523[1].includes('(min)') || 
+                                    row523[1].includes('(°C)') || row523[1].includes('(m)') || 
+                                    row523[1].includes('(Rs)') || row523[1].includes('(g/L)') || 
+                                    row523[1].includes('(dB)') ? 'number' : 'text';
+                        input.addEventListener('input', updateStats);
+                        valueTd.appendChild(input);
+                    }
+                }
+                tr.appendChild(valueTd);
+
+                const verifiedTd = document.createElement('td');
+                verifiedTd.className = 'verified-column';
+                if (!isCategory) {
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.addEventListener('change', updateStats);
+                    verifiedTd.appendChild(checkbox);
+                }
+                tr.appendChild(verifiedTd);
+
+                const remarksTd = document.createElement('td');
+                remarksTd.className = 'remarks-column';
+                if (!isCategory) {
+                    const select = document.createElement('select');
+                    select.innerHTML = '<option value="">Select...</option>';
+                    remarkOptions.forEach(option => {
+                        const optionElement = document.createElement('option');
+                        optionElement.value = option;
+                        optionElement.textContent = option;
+                        select.appendChild(optionElement);
+                    });
+                    remarksTd.appendChild(select);
+                }
+                tr.appendChild(remarksTd);
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateStats() {
+            const parameterRows = document.querySelectorAll('.parameter-row');
+            const totalParams = parameterRows.length;
+            let completedParams = 0;
+            let verifiedParams = 0;
+
+            parameterRows.forEach(row523 => {
+                const valueInput = row523.querySelector('td:nth-child(3) input, td:nth-child(3) select');
+                const verifiedCheckbox = row523.querySelector('td:nth-child(4) input[type="checkbox"]');
+
+                if (valueInput && valueInput.value.trim() !== '') {
+                    completedParams++;
+                }
+
+                if (verifiedCheckbox && verifiedCheckbox.checked) {
+                    verifiedParams++;
+                }
+            });
+
+            const completionPercent = Math.round((completedParams / totalParams) * 100);
+
+            document.getElementById('totalParams').textContent = totalParams;
+            document.getElementById('completedParams').textContent = completedParams;
+            document.getElementById('verifiedParams').textContent = verifiedParams;
+            document.getElementById('completionPercent').textContent = completionPercent + '%';
+            document.getElementById('progressFill').style.width = completionPercent + '%';
+        }
+
+        async function openCamera() {
+            // Check for secure context (HTTPS or localhost)
+            if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+                alert('Camera access requires a secure connection (HTTPS). Please host the site on HTTPS or localhost.');
+                return;
+            }
+
+            try {
+                // Request camera permission
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                const video = document.getElementById('video');
+                video.srcObject = stream;
+                document.getElementById('cameraModal').style.display = 'flex';
+            } catch (err) {
+                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                    alert('Camera permission denied. Please enable camera access in your browser settings:\n1. Go to Settings > Site Settings > Camera.\n2. Allow camera access for this site.\n3. Reload the page and try again.');
+                } else {
+                    alert('Error accessing camera: ' + err.message);
+                }
+                console.error('Camera error:', err);
+            }
+        }
+
+        function capturePhoto() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('photoCanvas');
+            const context = canvas.getContext('2d');
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            capturedImage = canvas.toDataURL('image/jpeg');
+            closeCamera();
+        }
+
+        function closeCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            document.getElementById('cameraModal').style.display = 'none';
+        }
+
+        function generateReport() {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            loadingIndicator.classList.add('active');
+
+            setTimeout(() => {
+                const doc = new jsPDF();
+                const parameterRows = document.querySelectorAll('.parameter-row');
+                let reportData = [];
+                let currentCategory = '';
+
+                parameterRows.forEach((row523, index) => {
+                    const category = row523.previousElementSibling?.classList.contains('category-row') ? 
+                        row523.previousElementSibling.querySelector('td:first-child').textContent : currentCategory;
+                    const parameter = row523.querySelector('td:nth-child(2)').textContent;
+                    const valueElement = row523.querySelector('td:nth-child(3) input, td:nth-child(3) select');
+                    const value = valueElement ? valueElement.value || 'Not filled' : 'Not filled';
+                    const verified = row523.querySelector('td:nth-child(4) input[type="checkbox"]')?.checked ? '✓' : '✗';
+                    const remarks = row523.querySelector('td:nth-child(5) select')?.value || 'None';
+
+                    if (category !== currentCategory) {
+                        currentCategory = category;
+                        reportData.push({ isCategory: true, category: category });
+                    }
+                    reportData.push({
+                        isCategory: false,
+                        category: category,
+                        parameter: parameter,
+                        value: value,
+                        verified: verified,
+                        remarks: remarks
+                    });
+                });
+
+                // Header
+                doc.setFontSize(24);
+                doc.setTextColor(227, 6, 19); // Red for EXIDE
+                doc.setFont('helvetica', 'bold');
+                doc.text('EXIDE', 105, 20, { align: 'center' });
+                doc.setFontSize(12);
+                doc.setTextColor(0, 0, 0); // Black for PAKISTAN LTD
+                doc.setFont('helvetica', 'normal');
+                doc.text('PAKISTAN LTD', 105, 28, { align: 'center' });
+                doc.setFontSize(16);
+                doc.text('Generator Survey Report', 105, 38, { align: 'center' });
+                doc.setFontSize(10);
+                doc.text(`Generated on: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Karachi' })}`, 105, 48, { align: 'center' });
+                doc.text('Generated by Owais Khan', 105, 54, { align: 'center' });
+
+                // Statistics
+                const stats = {
+                    total: document.getElementById('totalParams').textContent,
+                    completed: document.getElementById('completedParams').textContent,
+                    verified: document.getElementById('verifiedParams').textContent,
+                    completion: document.getElementById('completionPercent').textContent
+                };
+                doc.setFontSize(12);
+                doc.setTextColor(54, 95, 145);
+                doc.text('Survey Statistics', 20, 65);
+                doc.setFontSize(10);
+                doc.setTextColor(0, 0, 0);
+                doc.text(`Total Parameters: ${stats.total}`, 20, 75);
+                doc.text(`Completed: ${stats.completed}`, 60, 75);
+                doc.text(`Verified: ${stats.verified}`, 100, 75);
+                doc.text(`Completion: ${stats.completion}`, 140, 75);
+
+                // Table
+                doc.autoTable({
+                    startY: 85,
+                    head: [['Category', 'Parameter', 'Value', 'Verified', 'Remarks']],
+                    body: reportData.map(item => {
+                        if (item.isCategory) {
+                            return [item.category, '', '', '', ''];
+                        }
+                        return [item.category, item.parameter, item.value, item.verified, item.remarks];
+                    }),
+                    theme: 'grid',
+                    headStyles: {
+                        fillColor: [79, 129, 189],
+                        textColor: [255, 255, 255],
+                        fontSize: 10
+                    },
+                    styles: {
+                        fontSize: 7, // Slightly reduced for mobile readability
+                        cellPadding: 2,
+                        overflow: 'linebreak'
+                    },
+                    columnStyles: {
+                        0: { cellWidth: 35 },
+                        1: { cellWidth: 45 },
+                        2: { cellWidth: 35 },
+                        3: { cellWidth: 18 },
+                        4: { cellWidth: 35 }
+                    },
+                    alternateRowStyles: {
+                        fillColor: [248, 249, 250]
+                    },
+                    didParseCell: function(data) {
+                        // Highlight and merge category rows for: Generator Specifications, Fuel Consumption,
+                        // Operational Constraints, Cost Data, Performance Data, Emissions (Optional), Compliance & Safety
+                        if (data.row.raw.isCategory) {
+                            data.cell.colSpan = 5; // Merge all 5 columns
+                            data.cell.styles.fillColor = [220, 230, 241]; // Light blue background
+                            data.cell.styles.textColor = [54, 95, 145]; // Dark blue text
+                            data.cell.styles.fontStyle = 'bold';
+                            data.cell.styles.minCellHeight = 8; // Increase row height for visibility
+                            data.cell.text = data.row.raw.category; // Set text to category only
+                        }
+                    }
+                });
+
+                // Photo Section
+                let finalY = doc.lastAutoTable.finalY || 85;
+                if (capturedImage) {
+                    doc.setFontSize(12);
+                    doc.setTextColor(54, 95, 145);
+                    doc.text('Captured Photo', 20, finalY + 10);
+                    try {
+                        const imgProps = doc.getImageProperties(capturedImage);
+                        const maxWidth = 170; // Fits within page margins
+                        const imgHeight = (maxWidth / imgProps.width) * imgProps.height;
+                        if (finalY + imgHeight + 90 > 287) { // Check if photo fits on page
+                            doc.addPage();
+                            finalY = 10;
+                            doc.text('Captured Photo', 20, finalY + 10);
+                        }
+                        doc.addImage(capturedImage, 'JPEG', 20, finalY + 15, maxWidth, imgHeight);
+                        finalY += imgHeight + 20;
+                    } catch (err) {
+                        console.error('Error adding image to PDF:', err);
+                    }
+                } else {
+                    finalY += 10;
+                }
+
+                // Signature Section
+                doc.setFontSize(12);
+                doc.setTextColor(54, 95, 145);
+                doc.text('Authorization & Verification', 20, finalY + 10);
+                doc.setFontSize(10);
+                doc.setTextColor(0, 0, 0);
+                doc.text('Engineer Name:', 20, finalY + 25);
+                doc.line(50, finalY + 27, 130, finalY + 27);
+                doc.text('Engineer Signature:', 20, finalY + 40);
+                doc.line(60, finalY + 42, 130, finalY + 42);
+                doc.text('Date:', 20, finalY + 55);
+                doc.line(40, finalY + 57, 100, finalY + 57);
+                doc.setFontSize(9);
+                doc.setTextColor(128, 128, 128);
+                doc.text('I hereby certify that the above information has been verified and is accurate to the best of my knowledge.', 20, finalY + 70);
+
+                // Footer
+                const pageCount = doc.internal.getNumberOfPages();
+                for (let i = 1; i <= pageCount; i++) {
+                    doc.setPage(i);
+                    doc.setFontSize(8);
+                    doc.setTextColor(128, 128, 128);
+                    doc.text('Generated by Owais Khan | EXIDE PAKISTAN LTD Generator Survey System', 105, 287, { align: 'center' });
+                    doc.text(`Page ${i}`, 190, 287, { align: 'right' });
+                }
+
+                // Save PDF
+                const fileName = `Generator_Survey_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+                doc.save(fileName);
+
+                loadingIndicator.classList.remove('active');
+                alert('Report generated successfully!');
+            }, 500);
+        }
+
+        function clearForm() {
+            if (confirm('Are you sure you want to clear all form data? This action cannot be undone.')) {
+                const inputs = document.querySelectorAll('input, select');
+                inputs.forEach(input => {
+                    if (input.type === 'checkbox') {
+                        input.checked = false;
+                    } else {
+                        input.value = '';
+                    }
+                });
+                capturedImage = null; // Clear captured photo
+                updateStats();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            generateTable();
+            updateStats();
+        });
+    </script>
+</body>
+</html>
